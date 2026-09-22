@@ -9,6 +9,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Self-hosting (Hostinger VPS, Docker): emits .next/standalone with a bundled server.js
+  // so the server runs without a full node_modules tree. Harmless on Vercel.
+  output: "standalone",
   serverExternalPackages: ["sharp"],
   turbopack: { root: process.cwd() },
   async headers() {

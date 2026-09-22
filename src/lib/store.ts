@@ -29,7 +29,9 @@ interface DB {
   media: MediaItem[];
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+// DATA_DIR lets a deployment keep data outside the app directory, so it survives redeploys.
+// e.g. DATA_DIR=/var/lib/4xcms on a VPS. Defaults to ./.data for local development.
+const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 export const MEDIA_DIR = path.join(DATA_DIR, "media");
 

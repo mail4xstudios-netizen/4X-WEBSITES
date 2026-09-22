@@ -53,6 +53,26 @@ src/proxy.ts              hostname → tenant routing (§12)
 
 Compliance guardrails (PRD §11) are enforced in code: lawyer sites get a mandatory disclaimer gate and never show prices; RERA-less listings and unsourced result claims stay in the draft but are filtered at publish; "best / No.1 / guaranteed" phrasing is flagged in the editor; dentist registration and advocate enrolment numbers are required to publish.
 
+## Deploying (Hostinger VPS / any Node host)
+
+This is a Next.js server app: it needs **Node.js 20+ running as a process**. Hostinger **shared/"Website" hosting cannot run it** (that plan serves static files and PHP only) — use a Hostinger **VPS** (KVM), as the PRD assumes, or any Node host.
+
+```bash
+git clone https://github.com/mail4xstudios-netizen/4X-WEBSITES.git
+cd 4X-WEBSITES && npm ci && npm run build
+
+# copy the standalone server and its assets
+cp -r .next/static .next/standalone/.next/
+cp -r public .next/standalone/
+
+# run it (keep it alive with pm2 or a systemd unit)
+PLATFORM_HOSTS="yourdomain.com" DATA_DIR=/var/lib/4xcms PORT=3000 node .next/standalone/server.js
+```
+
+Then put Nginx or Caddy in front of port 3000 for TLS.
+
+**`PLATFORM_HOSTS` is the setting that matters most.** It lists the hostnames that serve the store, dashboard and admin panel. Any *other* hostname is treated as a customer's custom domain and resolved against the domains table — so if you leave your own domain out of it, every page 404s. Leave it empty and the platform answers on every hostname (fine until you sell custom domains).
+
 ## Environment
 
 Copy `.env.example` to `.env.local` to change `ADMIN_EMAIL`, `ADMIN_PASSWORD` (seeded on first admin login) or `RAZORPAY_WEBHOOK_SECRET`.
