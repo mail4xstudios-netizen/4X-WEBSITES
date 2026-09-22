@@ -1,69 +1,85 @@
-import Image from "next/image";
+import Link from "next/link";
+import { StoreFooter, StoreHeader } from "@/components/store/Shell";
+import { ThemeCard } from "@/components/store/ThemeCard";
+import { PROFESSIONS } from "@/lib/catalogue";
+import { allThemes } from "@/lib/themes";
+import type { Profession } from "@/lib/types";
 
 export default function Home() {
+  const featured = allThemes().filter((t) => t.featured);
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <>
+      <StoreHeader />
+      <main>
+        <section className="bg-gradient-to-b from-wash to-white">
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 md:grid-cols-2">
+            <div>
+              <p className="kicker">Website themes built for your profession</p>
+              <h1 className="mt-3 text-5xl font-extrabold leading-[1.02] tracking-tight sm:text-6xl">Pick a theme. Fill one form. <span className="text-blue">Your website is live.</span></h1>
+              <p className="mt-5 max-w-xl text-lg text-ink2">Every theme is already designed for dentists, lawyers, institutes or real estate. Pay online, answer a guided form with your logo, services and contact details — and get a fully editable site in under 15 minutes.</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link href="/themes" className="btn-primary">Browse {allThemes().length} themes</Link>
+                <Link href="/demo/enamel" className="btn-secondary">See a live demo</Link>
+              </div>
+              <div className="mt-8 flex flex-wrap gap-6 text-sm text-muted">
+                <span>✓ Build in under 60 seconds</span><span>✓ Edit everything yourself</span><span>✓ Your own domain + SSL</span><span>✓ GST invoice</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {(Object.keys(PROFESSIONS) as Profession[]).map((p) => (
+                <Link key={p} href={`/themes?profession=${p}`} className="card p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+                  <div className="text-3xl">{PROFESSIONS[p].icon}</div>
+                  <h2 className="mt-3 text-lg font-bold">{PROFESSIONS[p].plural}</h2>
+                  <p className="mt-1 text-sm text-muted">{PROFESSIONS[p].blurb}</p>
+                  <p className="mt-3 text-sm font-semibold text-blue">5 themes →</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+          <div className="mb-8 flex items-end justify-between">
+            <div><p className="kicker">Featured</p><h2 className="text-3xl font-bold tracking-tight">One theme per profession to start with</h2></div>
+            <Link href="/themes" className="text-sm font-semibold text-blue">All themes →</Link>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">{featured.map((t) => <ThemeCard key={t.id} theme={t} />)}</div>
+        </section>
+
+        <section className="bg-wash">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+            <p className="kicker">How it works</p>
+            <h2 className="text-3xl font-bold tracking-tight">From checkout to live site in seven steps</h2>
+            <ol className="mt-8 grid gap-5 md:grid-cols-4">
+              {[
+                ["Browse", "Filter by profession, open a live demo with realistic content."],
+                ["Pay", "Razorpay checkout with UPI, cards and netbanking. GST invoice issued automatically."],
+                ["Fill the form", "Only what your theme needs — logo, about, services, team, contact. Auto-saves."],
+                ["Auto-build", "Content is mapped into the theme, images optimised, SEO generated. Under 60 s."],
+                ["Review & edit", "Click any text or image in the preview to change it. Publish when ready."],
+                ["Connect domain", "Guided DNS steps; SSL issued automatically once ownership is verified."],
+                ["Keep it fresh", "Change timings, services and photos any time. Leads arrive in your dashboard."],
+              ].map(([t, d], i) => (
+                <li key={t} className="card p-5"><span className="grid h-8 w-8 place-items-center rounded-full bg-blue text-sm font-bold text-white">{i + 1}</span><h3 className="mt-3 font-bold">{t}</h3><p className="mt-1 text-sm text-ink2">{d}</p></li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+          <p className="kicker">Built-in compliance</p>
+          <h2 className="text-3xl font-bold tracking-tight">Guardrails for regulated professions</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-4">
+            {[
+              ["Lawyers", "Mandatory Bar Council disclaimer gate. No testimonials, pricing or ranking claims."],
+              ["Dentists", "Registration shown on every page. 'Best / No.1' claims flagged. Consent-gated before/after photos."],
+              ["Real estate", "RERA number on every project; listings won't publish without one."],
+              ["Institutes", "Results need a year and source. '100% placement' phrasing is flagged."],
+            ].map(([t, d]) => <div key={t} className="rounded-xl border-l-4 border-blue bg-wash p-5"><h3 className="font-bold">{t}</h3><p className="mt-1 text-sm text-ink2">{d}</p></div>)}
+          </div>
+        </section>
       </main>
-    </div>
+      <StoreFooter />
+    </>
   );
 }

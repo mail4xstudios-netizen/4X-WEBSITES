@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 4XCMS local data (stand-in for Postgres + object storage)
+.data/

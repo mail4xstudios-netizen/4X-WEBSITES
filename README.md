@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 4XCMS Theme Store
 
-## Getting Started
+Localhost implementation of the **4XCMS Theme Store PRD** (v1.0, 21 Sep 2026): customers pick a profession-specific theme, pay, fill one guided form, and get a live, editable website. 20 themes across dentists, lawyers, institutes and real estate.
 
-First, run the development server:
+## Run it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# → http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+No external accounts are needed. Postgres, Razorpay, email and SSL are replaced by local stand-ins:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Production (PRD §12)         | Localhost                                                             |
+| ---------------------------- | --------------------------------------------------------------------- |
+| PostgreSQL + Prisma          | `.data/db.json` (same entities as PRD §13, see `src/lib/store.ts`)    |
+| Razorpay Orders + webhooks   | `/api/v1/checkout/pay` signs a `payment.captured` event with HMAC-SHA256 and posts it to the real webhook route |
+| S3 / R2 media + CDN          | `.data/media/` served from `/api/media/:id` (sharp re-encodes to WebP, strips EXIF) |
+| Auth.js (OTP / Google)       | Email + password (scrypt) with database sessions in `src/lib/auth.ts`; httpOnly cookie holds only a session id; tenant access is always resolved through membership |
+| Caddy on-demand TLS          | `/internal/tls-check?domain=` answers 200/403 from the verified-domains table |
+| Custom domains               | `<slug>.localhost:3000` resolves to the tenant site via `src/proxy.ts`; any other Host header is treated as a custom domain |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Walk the customer journey
 
-## Learn More
+1. **Browse** `/themes` — filter by profession, style, feature, price. `/themes/enamel` for a detail page, `/demo/enamel` for the live demo with device toggle and "Try with my logo and name".
+2. **Sign up** `/signup` (or `/login`) — email + password. Checkout requires a signed-in account; after login `/account` shows **My websites** with *Edit my website* / *View my website*, leads, invoices and active sessions.
+3. **Buy** `/checkout/enamel` — pick a plan, enter details (try coupon `LAUNCH20`), click *Pay via UPI*. The browser only sees "confirming"; the order flips to paid when the signed webhook lands. A GST invoice number is issued (`/invoice/:orderId`).
+4. **Onboard** — the multi-step form is generated from the theme manifest, autosaves, shows compliance warnings, and previews your brand live.
+5. **Build** — "Build my website" queues a job; watch the stages, then land in the dashboard.
+6. **Edit** `/dashboard/:tenantId` — click any text or image in the preview to jump to its field; hide sections; SEO; publish. Design, Leads, Versions, Domain, Billing, Team, Security live in the sidebar.
+7. **Go live** — the published site answers at `http://<slug>.localhost:3000` and `/s/<slug>`. Submit the contact form and the lead appears in the dashboard.
+8. **Super admin** `/admin` — separate admin accounts (`/admin/login`; default credentials in `.env.example`). Dashboard with funnel + "needs attention", tenants (suspend / extend / plan / log-in-as with audited reason), **users** (search, disable, reset password, end sessions), orders & refunds, domain queue, coupons, platform-wide leads, webhook log, audit log, admin account management. **Themes**: add new themes, edit every field of existing ones (name, profession, layout, accent, style, price, features, highlights, status, pages & sections, onboarding steps), open the **visual designer** to set a theme's default look and demo content, reset catalogue themes to their code definition. **Tenants → Edit website** opens any customer's editor.
 
-To learn more about Next.js, take a look at the following resources:
+## Where things live
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/lib/catalogue.ts      20 themes, manifests, plans, coupons, form step library (PRD §4, §5, §10)
+src/lib/demo-content.ts   realistic sample content per profession
+src/lib/engine.ts         slot mapper, validation, compliance rules (§11), WCAG accent, SEO/schema.org (§6)
+src/lib/build.ts          background build job with progress (BLD-07)
+src/lib/commerce.ts       server-side pricing, HMAC webhook verification, idempotency, invoice numbers (§4.3)
+src/lib/store.ts          file-backed store mirroring the PRD data model (§13)
+src/lib/themes.ts         theme registry: code catalogue + admin-created/edited themes from the DB
+src/lib/design-css.ts     compiles DesignSettings (global / section / element styles) to CSS; shared by renderer + live editor
+src/components/editor/    the visual editor used by owners (site) and admins (theme designer)
+src/lib/auth.ts           scrypt passwords, database sessions (user 7d / admin 12h), rate limiting (§15)
+src/lib/session.ts        session → user → membership → tenant guard (§15)
+src/components/site/      SiteRenderer: 5 layout personalities + profession sections, disclaimer gate, lead form
+src/app/api/v1/           REST surface from PRD §14
+src/proxy.ts              hostname → tenant routing (§12)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Compliance guardrails (PRD §11) are enforced in code: lawyer sites get a mandatory disclaimer gate and never show prices; RERA-less listings and unsourced result claims stay in the draft but are filtered at publish; "best / No.1 / guaranteed" phrasing is flagged in the editor; dentist registration and advocate enrolment numbers are required to publish.
 
-## Deploy on Vercel
+## Environment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Copy `.env.example` to `.env.local` to change `ADMIN_EMAIL`, `ADMIN_PASSWORD` (seeded on first admin login) or `RAZORPAY_WEBHOOK_SECRET`.
