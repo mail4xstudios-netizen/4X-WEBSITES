@@ -17,6 +17,7 @@ No external accounts are needed. Postgres, Razorpay, email and SSL are replaced 
 | PostgreSQL + Prisma          | `.data/db.json` (same entities as PRD §13, see `src/lib/store.ts`)    |
 | Razorpay Orders + webhooks   | `/api/v1/checkout/pay` signs a `payment.captured` event with HMAC-SHA256 and posts it to the real webhook route |
 | S3 / R2 media + CDN          | `.data/media/` served from `/api/media/:id` (sharp re-encodes to WebP, strips EXIF) |
+| Hostinger shared hosting     | Not supported — it runs PHP/static only, with no Node process. Use a KVM VPS. |
 | Auth.js (OTP / Google)       | Email + password (scrypt) with database sessions in `src/lib/auth.ts`; httpOnly cookie holds only a session id; tenant access is always resolved through membership |
 | Caddy on-demand TLS          | `/internal/tls-check?domain=` answers 200/403 from the verified-domains table |
 | Custom domains               | `<slug>.localhost:3000` resolves to the tenant site via `src/proxy.ts`; any other Host header is treated as a custom domain |
@@ -57,19 +58,25 @@ Compliance guardrails (PRD §11) are enforced in code: lawyer sites get a mandat
 
 This is a Next.js server app: it needs **Node.js 20+ running as a process**. Hostinger **shared/"Website" hosting cannot run it** (that plan serves static files and PHP only) — use a Hostinger **VPS** (KVM), as the PRD assumes, or any Node host.
 
-```bash
-git clone https://github.com/mail4xstudios-netizen/4X-WEBSITES.git
-cd 4X-WEBSITES && npm ci && npm run build
+On a fresh Ubuntu VPS, `deploy/setup.sh` does the whole thing — Node, build, systemd service, nginx, TLS:
 
-# copy the standalone server and its assets
+```bash
+git clone https://github.com/mail4xstudios-netizen/4X-WEBSITES.git /opt/4xcms
+cd /opt/4xcms && bash deploy/setup.sh yourdomain.com
+```
+
+Afterwards, deploy updates with `bash /opt/4xcms/deploy/update.sh`.
+
+Doing it by hand instead:
+
+```bash
+npm ci && npm run build
 cp -r .next/static .next/standalone/.next/
 cp -r public .next/standalone/
-
-# run it (keep it alive with pm2 or a systemd unit)
 PLATFORM_HOSTS="yourdomain.com" DATA_DIR=/var/lib/4xcms PORT=3000 node .next/standalone/server.js
 ```
 
-Then put Nginx or Caddy in front of port 3000 for TLS.
+Then put nginx or Caddy in front of port 3000 for TLS (`deploy/nginx.conf` is a working sample). Whatever proxy you use **must pass the original `Host` header through** — tenant routing reads it.
 
 **`PLATFORM_HOSTS` is the setting that matters most.** It lists the hostnames that serve the store, dashboard and admin panel. Any *other* hostname is treated as a customer's custom domain and resolved against the domains table — so if you leave your own domain out of it, every page 404s. Leave it empty and the platform answers on every hostname (fine until you sell custom domains).
 
