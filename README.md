@@ -80,6 +80,17 @@ Then put nginx or Caddy in front of port 3000 for TLS (`deploy/nginx.conf` is a 
 
 **`PLATFORM_HOSTS` is the setting that matters most.** It lists the hostnames that serve the store, dashboard and admin panel. Any *other* hostname is treated as a customer's custom domain and resolved against the domains table — so if you leave your own domain out of it, every page 404s. Leave it empty and the platform answers on every hostname (fine until you sell custom domains).
 
+### Admin access
+
+`ADMIN_EMAIL` / `ADMIN_PASSWORD` **seed the first admin only**. Once that account exists, editing those variables and restarting changes nothing — the password lives in the database as a scrypt hash. To set or recover a password on a server:
+
+```bash
+sudo DATA_DIR=/var/lib/4xcms node /opt/4xcms/scripts/set-admin.mjs you@example.com 'NewPassword123'
+sudo systemctl restart 4xcms
+```
+
+It creates the account if it is missing, updates it if it exists, and ends that admin's existing sessions. Omit the password to have one generated. Day to day, change it in the panel instead: **Admin accounts → Change my password**.
+
 ## Environment
 
 Copy `.env.example` to `.env.local` to change `ADMIN_EMAIL`, `ADMIN_PASSWORD` (seeded on first admin login) or `RAZORPAY_WEBHOOK_SECRET`.
