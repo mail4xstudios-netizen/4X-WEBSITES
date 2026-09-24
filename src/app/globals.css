@@ -38,6 +38,19 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); 
 .tag { @apply inline-block rounded-full bg-blue-soft px-2.5 py-0.5 text-xs font-semibold text-blue-deep; }
 .kicker { @apply text-sm font-semibold uppercase tracking-wide text-blue; }
 
+/* Theme previews are composed at a fixed design width and scaled to fill their
+   container, so the same mockup reads correctly in a card and in a hero. */
+.tp-scale { container-type: inline-size; }
+
+/* Filter rail: a disclosure on small screens, always open from lg up. */
+.filters > summary { list-style: none; cursor: pointer; }
+.filters > summary::-webkit-details-marker { display: none; }
+.filters[open] > summary .chev { transform: rotate(180deg); }
+@media (min-width: 1024px) {
+  .filters > summary { display: none; }
+  .filters > .filters-body { display: block !important; }
+}
+
 /* mini theme wireframes (from the PRD catalogue) */
 .tp { --a: #1747d4; aspect-ratio: 16/10; background: #fff; padding: 8px; display: flex; flex-direction: column; gap: 5px; position: relative; overflow: hidden; }
 .tp .nav { display: flex; align-items: center; gap: 4px; height: 9px; }
