@@ -80,6 +80,14 @@ Then put nginx or Caddy in front of port 3000 for TLS (`deploy/nginx.conf` is a 
 
 **`PLATFORM_HOSTS` is the setting that matters most.** It lists the hostnames that serve the store, dashboard and admin panel. Any *other* hostname is treated as a customer's custom domain and resolved against the domains table — so if you leave your own domain out of it, every page 404s. Leave it empty and the platform answers on every hostname (fine until you sell custom domains).
 
+### Checking a deployment
+
+```bash
+sudo DATA_DIR=/var/lib/4xcms node /opt/4xcms/scripts/doctor.mjs
+```
+
+Prints the environment the app actually sees, where its data lives, whether that directory is writable, and which admin accounts exist — no passwords or hashes. Start here when a deployment misbehaves.
+
 ### Admin access
 
 `ADMIN_EMAIL` / `ADMIN_PASSWORD` **seed the first admin only**. Once that account exists, editing those variables and restarting changes nothing — the password lives in the database as a scrypt hash. To set or recover a password on a server:
@@ -90,6 +98,8 @@ sudo systemctl restart 4xcms
 ```
 
 It creates the account if it is missing, updates it if it exists, and ends that admin's existing sessions. Omit the password to have one generated. Day to day, change it in the panel instead: **Admin accounts → Change my password**.
+
+On a VPS there is no hosting-panel UI for environment variables — they come from the systemd `EnvironmentFile` at `/opt/4xcms/.env.production`. systemd reads that file literally (no shell quoting or expansion), so keep values free of spaces and quotes, and restart with `sudo systemctl restart 4xcms` after editing.
 
 ## Environment
 
