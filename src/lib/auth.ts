@@ -170,13 +170,37 @@ export async function startUserSessionAs(userId: string) {
 }
 
 // ---------- admins ----------
+/**
+ * Bootstraps admin access from the environment (PRD §15).
+ *
+ * - No admins at all  → seeds one from ADMIN_EMAIL / ADMIN_PASSWORD.
+ * - ADMIN_EMAIL set but no admin has that address → creates that admin too. This is the
+ *   recovery path: set the two variables, restart, sign in. Existing accounts are left alone.
+ * - ADMIN_PASSWORD_RESET=true → also re-applies ADMIN_PASSWORD to ADMIN_EMAIL's existing
+ *   account and ends its sessions. Remove the flag afterwards so a restart cannot undo a
+ *   password later changed in the panel.
+ *
+ * Anyone able to set these variables already controls the server, so this grants no new access.
+ */
 export function ensureDefaultAdmin() {
   const d = db.get();
-  if (d.admins.length) return;
-  const email = process.env.ADMIN_EMAIL ?? "admin@4xstudios.com";
-  const password = process.env.ADMIN_PASSWORD ?? "Admin@4x2026";
-  d.admins.push({ id: db.id("adm"), name: "4X Super Admin", email, passwordHash: hashPassword(password), role: "superadmin", createdAt: db.now() });
-  db.save();
+  const email = process.env.ADMIN_EMAIL ?? (d.admins.length ? null : "admin@4xstudios.com");
+  const password = process.env.ADMIN_PASSWORD ?? (d.admins.length ? null : "Admin@4x2026");
+  if (!email || !password) return;
+
+  const existing = d.admins.find((a) => a.email.toLowerCase() === email.toLowerCase());
+  if (!existing) {
+    d.admins.push({ id: db.id("adm"), name: "4X Super Admin", email, passwordHash: hashPassword(password), role: "superadmin", createdAt: db.now() });
+    db.save();
+    console.log(`[4xcms] created super admin ${email} from ADMIN_EMAIL/ADMIN_PASSWORD`);
+    return;
+  }
+  if (process.env.ADMIN_PASSWORD_RESET === "true") {
+    existing.passwordHash = hashPassword(password);
+    d.sessions = d.sessions.filter((s) => !(s.kind === "admin" && s.subjectId === existing.id));
+    db.save();
+    console.log(`[4xcms] reset password for ${email} (ADMIN_PASSWORD_RESET=true — remove this variable now)`);
+  }
 }
 
 export async function currentAdmin(): Promise<AdminUser | null> {

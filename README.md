@@ -90,7 +90,16 @@ Prints the environment the app actually sees, where its data lives, whether that
 
 ### Admin access
 
-`ADMIN_EMAIL` / `ADMIN_PASSWORD` **seed the first admin only**. Once that account exists, editing those variables and restarting changes nothing — the password lives in the database as a scrypt hash. To set or recover a password on a server:
+`ADMIN_EMAIL` / `ADMIN_PASSWORD` bootstrap admin access:
+
+| Situation | What a restart does |
+| --- | --- |
+| No admins exist | Creates the first admin from these variables |
+| `ADMIN_EMAIL` has no account yet | Creates that admin — **the recovery path: set both, restart, sign in** |
+| `ADMIN_EMAIL` already has an account | Nothing; the stored password wins |
+| ...plus `ADMIN_PASSWORD_RESET=true` | Re-applies `ADMIN_PASSWORD` and ends that admin's sessions. Remove the flag afterwards |
+
+Or set a password directly, without a restart cycle:
 
 ```bash
 sudo DATA_DIR=/var/lib/4xcms node /opt/4xcms/scripts/set-admin.mjs you@example.com 'NewPassword123'
